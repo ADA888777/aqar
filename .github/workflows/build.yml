@@ -1,0 +1,61 @@
+name: بناء aqar للمتجر
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: فك ضغط المشروع من ملف ZIP
+        run: |
+          shopt -s nullglob
+          zips=( *.zip )
+          if [ ${#zips[@]} -eq 0 ]; then echo "لا يوجد ملف ZIP في المستودع"; exit 1; fi
+          Z="${zips[-1]}"
+          echo "سيُبنى من: $Z"
+          mkdir -p project && unzip -q "$Z" -d project
+          if [ ! -f project/pubspec.yaml ]; then
+            inner=$(find project -maxdepth 2 -name pubspec.yaml | head -1)
+            mv "$(dirname "$inner")"/* project/ 2>/dev/null || true
+          fi
+          test -f project/pubspec.yaml
+
+      - uses: actions/setup-java@v4
+        with: { distribution: zulu, java-version: '17' }
+
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+
+      - name: مفتاح التوقيع التلقائي
+        working-directory: project
+        run: |
+          keytool -genkeypair -v -keystore android/upload-keystore.jks \
+            -storepass "Kuwait2026Upload!" -keypass "Kuwait2026Upload!" \
+            -alias upload -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Aqar Kuwait, O=Aqar, C=KW"
+          printf "storePassword=Kuwait2026Upload!\nkeyPassword=Kuwait2026Upload!\nkeyAlias=upload\nstoreFile=%s/android/upload-keystore.jks\n" "$PWD" > android/key.properties
+
+      - name: البناء
+        working-directory: project
+        run: |
+          flutter pub get
+          flutter build appbundle --release
+          flutter build apk --release
+          mv build/app/outputs/bundle/release/app-release.aab ../aqar.aab
+          mv build/app/outputs/flutter-apk/app-release.apk ../aqar.apk
+
+      - name: "الناتج 1: aqar.aab — ارفعيه في Play Console"
+        uses: actions/upload-artifact@v4
+        with: { name: aqar-AAB-للمتجر, path: aqar.aab }
+
+      - name: "الناتج 2: aqar.apk — للتجربة على جوالك"
+        uses: actions/upload-artifact@v4
+        with: { name: aqar-APK-للتجربة, path: aqar.apk }
+
+      - name: "الناتج 3: مفتاح الرفع — احفظيه"
+        uses: actions/upload-artifact@v4
+        with: { name: مفتاح-الرفع-احفظيه, path: project/android/upload-keystore.jks }
