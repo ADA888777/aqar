@@ -1,15 +1,12 @@
 name: بناء aqar للمتجر
-
 on:
   push:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: فك ضغط المشروع من ملف ZIP
         run: |
           shopt -s nullglob
@@ -23,25 +20,29 @@ jobs:
             mv "$(dirname "$inner")"/* project/ 2>/dev/null || true
           fi
           test -f project/pubspec.yaml
-
       - uses: actions/setup-java@v4
         with: { distribution: zulu, java-version: '17' }
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.4'
           channel: stable
           cache: true
-
-      - name: مفتاح التوقيع التلقائي
+      - name: مفتاح التوقيع
         working-directory: project
         run: |
-          keytool -genkeypair -v -keystore android/upload-keystore.jks \
-            -storepass "Kuwait2026Upload!" -keypass "Kuwait2026Upload!" \
-            -alias upload -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Aqar Kuwait, O=Aqar, C=KW"
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "استخدام المفتاح المحفوظ في الأسرار"
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/upload-keystore.jks
+          else
+            echo "تحذير: لا يوجد سر KEYSTORE_BASE64 — سيُولَّد مفتاح جديد لن يقبله المتجر"
+            keytool -genkeypair -v -keystore android/upload-keystore.jks \
+              -storepass "Kuwait2026Upload!" -keypass "Kuwait2026Upload!" \
+              -alias upload -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Aqar Kuwait, O=Aqar, C=KW"
+          fi
           printf "storePassword=Kuwait2026Upload!\nkeyPassword=Kuwait2026Upload!\nkeyAlias=upload\nstoreFile=%s/android/upload-keystore.jks\n" "$PWD" > android/key.properties
-
+          echo "بصمة المفتاح المستخدم:"
+          keytool -list -v -keystore android/upload-keystore.jks -storepass "Kuwait2026Upload!" | grep "SHA1:"
       - name: البناء
         working-directory: project
         run: |
@@ -50,15 +51,9 @@ jobs:
           flutter build apk --release
           mv build/app/outputs/bundle/release/app-release.aab ../aqar.aab
           mv build/app/outputs/flutter-apk/app-release.apk ../aqar.apk
-
       - name: "الناتج 1: aqar.aab — ارفعيه في Play Console"
         uses: actions/upload-artifact@v4
         with: { name: aqar-AAB-للمتجر, path: aqar.aab }
-
       - name: "الناتج 2: aqar.apk — للتجربة على جوالك"
         uses: actions/upload-artifact@v4
         with: { name: aqar-APK-للتجربة, path: aqar.apk }
-
-      - name: "الناتج 3: مفتاح الرفع — احفظيه"
-        uses: actions/upload-artifact@v4
-        with: { name: مفتاح-الرفع-احفظيه, path: project/android/upload-keystore.jks }
