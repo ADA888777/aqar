@@ -171,7 +171,7 @@ jobs:
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' "$PB"
           COUNT=$(grep -c 'Apple Distribution' "$PB" || true)
           echo "مواضع Apple Distribution: ${COUNT:-0}"
-          [ "${COUNT:-0}" -gt 0 ] || echo "::warning::لم يُستبدل أي CODE_SIGN_IDENTITY — قد يفشل التوقيع
+          [ "${COUNT:-0}" -gt 0 ] || echo "::warning::لم يُستبدل أي CODE_SIGN_IDENTITY — قد يفشل التوقيع"
 
       # ── 7) الاعتماديات ─────────────────────────────────────
       - name: تحميل الحزم
