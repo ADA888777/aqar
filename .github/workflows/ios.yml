@@ -169,7 +169,7 @@ jobs:
           echo "PROFILE_NAME=$PPNAME" >> "$GITHUB_ENV"
           echo "الملف: $PPNAME ($UUID) — التطبيق: $PPAPP"
           case "$PPAPP" in
-            "$BUNDLE_ID") echo "Profile يطابق Bundle ID" ;;
+            *."$BUNDLE_ID") echo "Profile يطابق Bundle ID" ;;
             *) echo "::warning::Profile لا يطابق $BUNDLE_ID — قد يفشل التصدير" ;;
           esac
 
@@ -203,13 +203,11 @@ jobs:
           xcodebuild -workspace Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
-            -sdk iphoneos \
+            -sdk iphoneos -destination generic/platform=iOS \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            CODE_SIGN_STYLE=Manual \
+            CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-            OTHER_CODE_SIGN_FLAGS="--keychain $KC_PATH" \
+            CODE_SIGNING_REQUIRED=NO \
             archive | tail -40
 
       - name: تصدير IPA
