@@ -34,7 +34,7 @@ env:
 
 jobs:
   build-ios:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 90
     steps:
       - name: التحقق من أسرار iOS
@@ -91,12 +91,12 @@ jobs:
           echo "Bundle ID مطابق: $FOUND"
 
       # Firebase iOS SDK الحديث يستخدم صيغة Swift 6 (internal import)
-      # التي لا يفهمها Xcode 15 — نختار أحدث Xcode 16 على الـ runner
-      - name: اختيار Xcode 16
+      # التي لا يفهمها Xcode 15 — نختار أحدث Xcode 26 على الـ runner
+      - name: اختيار Xcode 26
         run: |
           set -euo pipefail
-          XC=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1 || true)
-          [ -n "$XC" ] || { echo "::error::لا يوجد Xcode 16 على هذا الـ runner"; ls /Applications | grep Xcode; exit 1; }
+          XC=$(ls -d /Applications/Xcode_2*.app 2>/dev/null | sort -V | tail -1 || true)
+          [ -n "$XC" ] || { echo "::error::لا يوجد Xcode 26 على هذا الـ runner"; ls /Applications | grep Xcode; exit 1; }
           sudo xcode-select -s "$XC/Contents/Developer"
           echo "Xcode: $XC"
           xcodebuild -version
@@ -221,7 +221,7 @@ jobs:
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
-            <key>method</key><string>app-store</string>
+            <key>method</key><string>app-store-connect</string>
             <key>teamID</key><string>${TEAM_ID}</string>
             <key>uploadBitcode</key><false/>
             <key>uploadSymbols</key><true/>
