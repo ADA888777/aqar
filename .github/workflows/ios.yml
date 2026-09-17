@@ -190,6 +190,7 @@ jobs:
           BUILD_NUMBER: ${{ inputs.build_number }}
         run: |
           set -euo pipefail
+          echo 'OTHER_LDFLAGS = $(inherited) -framework CoreMotion' >> ios/Flutter/Release.xcconfig
           echo "── الإصدار: $BUILD_NAME ($BUILD_NUMBER) ──"
           flutter build ios --release --no-codesign \
             --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER"
