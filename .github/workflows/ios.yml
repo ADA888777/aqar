@@ -14,7 +14,7 @@ on:
       project_zip:
         description: 'اسم أرشيف المشروع في جذر المستودع'
         required: true
-        default: 'zz-aqar-final90.zip'
+        default: 'zz-aqar-final91.zip'
       build_name:
         description: 'رقم الإصدار — يجب أن يطابق App Store Connect'
         required: true
@@ -90,8 +90,16 @@ jobs:
           [ "$FOUND" = "$BUNDLE_ID" ] || { echo "::error::Bundle ID غير مطابق: $FOUND"; exit 1; }
           echo "Bundle ID مطابق: $FOUND"
 
-      - name: اختيار Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+      # Firebase iOS SDK الحديث يستخدم صيغة Swift 6 (internal import)
+      # التي لا يفهمها Xcode 15 — نختار أحدث Xcode 16 على الـ runner
+      - name: اختيار Xcode 16
+        run: |
+          set -euo pipefail
+          XC=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1 || true)
+          [ -n "$XC" ] || { echo "::error::لا يوجد Xcode 16 على هذا الـ runner"; ls /Applications | grep Xcode; exit 1; }
+          sudo xcode-select -s "$XC/Contents/Developer"
+          echo "Xcode: $XC"
+          xcodebuild -version
 
       - uses: subosito/flutter-action@v2
         with:
